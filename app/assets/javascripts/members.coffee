@@ -1,46 +1,45 @@
-class DropBtn
-  props: ['member']
+class BsDropBtn
   template: '''
     <button
-      :class="member.color"
-      :id="member.uid"
+      type="button"
       area-expanded="true"
       area-haspopup="true"
       class="btn btn-block dropdown-toggle"
       data-toggle="dropdown"
-      type="button"
     >
-      <h4 v-text="member.name"></h4>
-      <small v-text="member.label"></small>
+      <slot></slot>
     </button>
   '''
 
+class DropBtn
+  props: ['member']
+  components: bsdropbtn: new BsDropBtn
+  template: '''
+    <bsdropbtn :class="member.color" :id="member.uid">
+      <h4>{{member.name}}</h4>
+      <small>{{member.label}}</small>
+    </bsdropbtn>
+  '''
+
 class DropList
-  props: ['member','states']
+  props: ['member','states','handleClick']
   template: '''
     <ul :area-labelledby="member.uid" class="dropdown-menu">
       <li v-for="state in states">
         <a
-          @click.prevent="notify(state.color)"
-          href="#"
-          v-text="state.label"
+          @click.prevent="handleClick(state.color)"
         >
+          {{state.label}}
         </a>
       </li>
     </ul>
   '''
-  methods:
-    notify: (color) ->
-      @$dispatch "click", color
 
 class SeatBtn
-  props: ['member','states']
+  props: ['member','states','csrftoken']
   components:
     dropbtn: new DropBtn
     droplist: new DropList
-
-  created: ->
-    @resource = Vue.resource "members{/id}"
 
   methods:
     handleClick: (color) ->
@@ -49,18 +48,22 @@ class SeatBtn
         @member.label = state.label
         @member.state_id = state.id
 
-      @resource.update(id:@member.id,@member).then(
+      @$http.patch(
+        "/members/#{@member.id}.json",
+        @member,
+        headers: "X-CSRF-Token": @csrftoken
+      ).then(
         (response) -> console.log response.data
         (response) -> alert response.data
       )
 
   template: '''
     <div class="dropdown">
-      <dropbtn :member="member"></basebtn>
+      <dropbtn :member="member"></dropbtn>
       <droplist
         :member="member"
         :states="states"
-        @click="handleClick"
+        :handle-click="handleClick"
       >
       </droplist>
     </div>
@@ -70,6 +73,9 @@ class SeatPanel
   props: ['members','states']
   components:
     seatbtn: new SeatBtn
+  created: ->
+    @csrftoken = document.querySelector("meta[name=csrf-token]").content
+    # @csrfheader = headers: "X-CSRF-Token": csrftoken
   template: '''
     <div class="row">
       <div class="col-xs-1" v-for="col in 12">
@@ -77,6 +83,7 @@ class SeatPanel
           v-for="member in cols(col)"
           :member="member"
           :states="states"
+          :csrftoken="csrftoken"
         >
         </seatbtn>
       </div>
@@ -86,7 +93,8 @@ class SeatPanel
     cols: (col) ->
       x for x in @members when x.col is col
 
-$ ->
+$(document).on "turbolinks:load", ->
+
   new Vue
     el: "body"
     components:
