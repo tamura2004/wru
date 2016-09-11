@@ -1,0 +1,18 @@
+p#notice = notice
+
+p
+  strong Job:
+  = @member.job
+p
+  strong Name:
+  = @member.name
+p
+  strong State:
+  = @member.state
+p
+  strong Seat:
+  = @member.seat
+
+= link_to 'Edit', edit_member_path(@member)
+'|
+= link_to 'Back', members_path

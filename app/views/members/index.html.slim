@@ -1,0 +1,8 @@
+seatpanel :members=@members.to_json :states=@states.to_json
+
+
+/ #members
+/   .row
+/     .col-xs-1 v-for="col in 12"
+/       div v-for="member in cols(col)"
+/         seatbtn :member="member" :states="states"
